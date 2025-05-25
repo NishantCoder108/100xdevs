@@ -22,3 +22,4 @@ This project was created using `bun init` in bun v1.2.14. [Bun](https://bun.sh) 
 - To run the project, we use `bun run index.ts`
 - To remove a dependency, we use `bun remove litesvm`
 - To update a dependency, we use `bun update litesvm`
+- 4 bytes = 32 bits

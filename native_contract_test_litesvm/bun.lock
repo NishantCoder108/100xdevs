@@ -4,6 +4,7 @@
     "": {
       "name": "native_contract_test_litesvm",
       "dependencies": {
+        "@solana/web3.js": "^1.98.2",
         "litesvm": "^0.2.0",
       },
       "devDependencies": {
