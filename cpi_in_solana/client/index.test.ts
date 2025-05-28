@@ -69,36 +69,47 @@ test("double the number", () => {
   tx.sign(user, dataAccount);
 
   litesvm.sendTransaction(tx);
+  litesvm.expireBlockhash();
 
-  //now ,interact dataAccount with onchain
-  const ixs2 = new TransactionInstruction({
-    programId: programId,
-    keys: [
-      {
-        pubkey: dataAccount.publicKey,
-        isSigner: true,
-        isWritable: true,
-      },
-    ],
-    data: Buffer.from([]),
-  });
+  //now ,Initialize the counter and interact dataAccount with onchain
 
-  const tx2 = new Transaction().add(ixs2);
-  tx2.recentBlockhash = litesvm.latestBlockhash();
-  tx2.feePayer = user.publicKey;
+  function double() {
+    const ixs2 = new TransactionInstruction({
+      programId: programId,
+      keys: [
+        {
+          pubkey: dataAccount.publicKey,
+          isSigner: true,
+          isWritable: true,
+        },
+      ],
+      data: Buffer.from([]),
+    });
 
-  tx2.sign(user, dataAccount);
+    const tx2 = new Transaction().add(ixs2);
+    tx2.recentBlockhash = litesvm.latestBlockhash();
+    tx2.feePayer = user.publicKey;
 
-  litesvm.sendTransaction(tx2);
+    tx2.sign(user, dataAccount);
+
+    litesvm.sendTransaction(tx2);
+    litesvm.expireBlockhash();
+  }
+
+  //calling multiple times of function so it will doubling the prev number
+  double();
+  double();
+  double();
+  double();
 
   const dataAcc = litesvm.getAccount(dataAccount.publicKey);
-  console.log("NewDataAcc:", dataAccount.publicKey.toBase58());
+  // console.log("NewDataAcc:", dataAccount.publicKey.toBase58());
   console.log(dataAcc);
-  const userBal = litesvm.getBalance(user.publicKey);
-  const dataAccBal = litesvm.getBalance(dataAccount.publicKey);
-
-  console.log({ userBal }, { dataAccBal });
-  expect(dataAcc?.data[0]).toBe(1);
+  //it will store in bytes not bit;
+  expect(dataAcc?.data[0]).toBe(8);
+  expect(dataAcc?.data[1]).toBe(0);
+  expect(dataAcc?.data[2]).toBe(0);
+  expect(dataAcc?.data[3]).toBe(0);
 });
 
 /**
@@ -111,7 +122,5 @@ test("double the number", () => {
  * 5. Sign the trasaction
  * 6. We can write test logic to double
  *
- *
- * *Question:
- * 1. When i just create function like process_instruction() and here we pass argument like program_id, accounts, instruction_data , so for program_id , when i deploy that will be program_id , so how can i test by liteSVM and pass program_id of system program
+
  */
