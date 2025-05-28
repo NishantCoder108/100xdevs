@@ -1,5 +1,6 @@
 import { test, expect } from "bun:test";
-
+import path from "path";
+import fs from "fs";
 import { LiteSVM } from "litesvm";
 import {
   PublicKey,
@@ -7,6 +8,7 @@ import {
   SystemProgram,
   Keypair,
   LAMPORTS_PER_SOL,
+  TransactionInstruction,
 } from "@solana/web3.js";
 
 test("one transfer", () => {
@@ -29,22 +31,27 @@ test("one transfer", () => {
   tx.sign(payer);
   svm.sendTransaction(tx);
   const balanceAfter = svm.getBalance(receiver);
-  console.log(
-    "Payer :",
-    payer.publicKey.toBase58(),
-    "Receiver :",
-    receiver.toBase58()
-  );
+  // console.log(
+  //   "Payer :",
+  //   payer.publicKey.toBase58(),
+  //   "Receiver :",
+  //   receiver.toBase58()
+  // );
   expect(balanceAfter).toBe(transferLamports);
 });
 
 test("double the number", () => {
+  const programId = PublicKey.unique();
   const litesvm = new LiteSVM();
+  const soPath = path.resolve(__dirname, "../target/deploy/cpi_in_solana.so");
+  if (!fs.existsSync(soPath)) {
+    throw new Error("Program .so file not found.");
+  }
+  litesvm.addProgramFromFile(programId, soPath);
   const user = new Keypair();
   litesvm.airdrop(user.publicKey, BigInt(5000000000));
 
   const dataAccount = new Keypair();
-  const programId = PublicKey.unique();
 
   const blockhash = litesvm.latestBlockhash();
   const ixs = SystemProgram.createAccount({
@@ -62,6 +69,36 @@ test("double the number", () => {
   tx.sign(user, dataAccount);
 
   litesvm.sendTransaction(tx);
+
+  //now ,interact dataAccount with onchain
+  const ixs2 = new TransactionInstruction({
+    programId: programId,
+    keys: [
+      {
+        pubkey: dataAccount.publicKey,
+        isSigner: true,
+        isWritable: true,
+      },
+    ],
+    data: Buffer.from([]),
+  });
+
+  const tx2 = new Transaction().add(ixs2);
+  tx2.recentBlockhash = litesvm.latestBlockhash();
+  tx2.feePayer = user.publicKey;
+
+  tx2.sign(user, dataAccount);
+
+  litesvm.sendTransaction(tx2);
+
+  const dataAcc = litesvm.getAccount(dataAccount.publicKey);
+  console.log("NewDataAcc:", dataAccount.publicKey.toBase58());
+  console.log(dataAcc);
+  const userBal = litesvm.getBalance(user.publicKey);
+  const dataAccBal = litesvm.getBalance(dataAccount.publicKey);
+
+  console.log({ userBal }, { dataAccBal });
+  expect(dataAcc?.data[0]).toBe(1);
 });
 
 /**
