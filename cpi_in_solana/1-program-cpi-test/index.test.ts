@@ -11,7 +11,7 @@ import { LiteSVM } from "litesvm";
 import { expect, test, describe, beforeEach } from "bun:test";
 import { deserialize } from "borsh";
 import * as borsh from "borsh";
-
+import fs, { existsSync } from "fs";
 class CounterState {
   count: number;
 
@@ -29,13 +29,25 @@ class CounterState {
 describe("Counter Program Tests", () => {
   let svm: LiteSVM;
   let doubleProgramId: PublicKey;
-  let cpiProgramId: PublicKey;
+  let cpiProgramId: PublicKey; //Program id of proxy smart contract (middle smart contract so they will interact with different program here i.e doubleProgramId)
   let dataAccount: Keypair;
   let userAccount: Keypair;
 
-  const cpiProgramPath = path.join(import.meta.dir, "program-cpi.so");
-  const doubleProgramPath = path.join(import.meta.dir, "program-double.so");
+  const cpiProgramPath = path.resolve(
+    __dirname,
+    "../1-program-cpi/target/deploy/program_cpi_of_simple_account.so"
+  );
+  const doubleProgramPath = path.resolve(
+    __dirname,
+    "../0-program-double/target/deploy/cpi_in_solana.so"
+  );
 
+  //   const cpiProgramPath = path.join(import.meta.dir, "program-cpi.so");
+  //   const doubleProgramPath = path.join(import.meta.dir, "program-double.so");
+
+  if (!fs.existsSync(cpiProgramPath) || !fs.existsSync(doubleProgramPath)) {
+    throw new Error("Progam path is not found.");
+  }
   beforeEach(() => {
     svm = new LiteSVM();
 
@@ -51,6 +63,7 @@ describe("Counter Program Tests", () => {
 
     svm.airdrop(userAccount.publicKey, BigInt(LAMPORTS_PER_SOL));
 
+    //Here creating a dataAccount from simple wallet address account , it have both sol and data
     let ix = SystemProgram.createAccount({
       fromPubkey: userAccount.publicKey,
       newAccountPubkey: dataAccount.publicKey,
@@ -99,7 +112,7 @@ describe("Counter Program Tests", () => {
   test("double counter value makes it 8 after 4 times", async () => {
     function doubleCounter() {
       const instruction = new TransactionInstruction({
-        programId: doubleProgramId,
+        programId: cpiProgramId, //this programid is for that contract is already deployed
         keys: [
           { pubkey: dataAccount.publicKey, isSigner: false, isWritable: true },
           { pubkey: doubleProgramId, isSigner: false, isWritable: false },
@@ -111,7 +124,7 @@ describe("Counter Program Tests", () => {
       transaction.recentBlockhash = svm.latestBlockhash();
 
       transaction.feePayer = userAccount.publicKey;
-      transaction.sign(dataAccount, userAccount);
+      transaction.sign(userAccount, dataAccount);
       svm.sendTransaction(transaction);
       svm.expireBlockhash();
     }
