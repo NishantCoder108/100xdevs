@@ -3,10 +3,13 @@ use std::collections::binary_heap::Iter;
 use solana_program::{
     account_info::{AccountInfo, next_account_info},
     entrypoint::{ProgramResult, entrypoint},
-    msg,
+    lamports, msg,
     program::invoke_signed,
+    program_error::ProgramError,
     pubkey::{self, Pubkey},
+    rent::Rent,
     system_instruction::create_account,
+    sysvar::Sysvar,
 };
 
 entrypoint!(process_instruction);
@@ -16,6 +19,11 @@ pub fn process_instruction(
     accounts: &[AccountInfo],
     instruction_data: &[u8],
 ) -> ProgramResult {
+    msg!("Instruction Data Length : {}", instruction_data.len());
+    if instruction_data.is_empty() {
+        return Err(ProgramError::InvalidInstructionData);
+    }
+    let bump = instruction_data[0];
     let mut iter = accounts.iter();
     let user_account = next_account_info(&mut iter)?;
     let pda_account = next_account_info(&mut iter)?;
@@ -23,16 +31,35 @@ pub fn process_instruction(
 
     //For lamports ,we can give directly number of lamports but here we can use Rent method , to necessary to use this
     // 4 bytes = u32
-    let (pda, bump) = Pubkey::find_program_address(
-        &[b"user1", user_account.key.as_ref()],
-        system_program_id.key,
-    );
+    let (expected_pda, _) =
+        Pubkey::find_program_address(&[b"user1", user_account.key.as_ref()], program_id);
 
-    let ix = create_account(user_account.key, &pda, 1000000000, 4, system_program_id.key);
+    if expected_pda != *pda_account.key {
+        return Err(ProgramError::InvalidArgument);
+    }
+
+    let rent = Rent::get()?;
+    let space = 4;
+    let lamports = rent.minimum_balance(space);
+    let ix = create_account(
+        user_account.key,
+        pda_account.key,
+        lamports,
+        space as u64, //we use more space so initialize first then
+        program_id,
+    );
 
     let signer_seed = &[b"user1", user_account.key.as_ref(), &[bump]];
 
-    invoke_signed(&ix, accounts, &[signer_seed])
+    invoke_signed(
+        &ix,
+        &[
+            user_account.clone(),
+            pda_account.clone(),
+            system_program_id.clone(),
+        ],
+        &[signer_seed],
+    )
 }
 
 /*
