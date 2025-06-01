@@ -17,3 +17,5 @@ fn main() {
 
     println!("Rect: {:?}", rect);
 }
+
+//Life times
