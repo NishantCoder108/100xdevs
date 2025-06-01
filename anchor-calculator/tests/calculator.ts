@@ -1,16 +1,83 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { Calculator } from "../target/types/calculator";
+import { AnchorCalculator } from "../target/types/anchor_calculator";
+import assert from "assert";
 
-describe("calculator", () => {
+describe("anchor-calculator", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
 
-  const program = anchor.workspace.calculator as Program<Calculator>;
+  const program = anchor.workspace
+    .anchorCalculator as Program<AnchorCalculator>;
+  const newAccount = anchor.web3.Keypair.generate();
 
   it("Is initialized!", async () => {
     // Add your test here.
-    const tx = await program.methods.initialize().rpc();
+    const tx = await program.methods
+      .initialize()
+      .accounts({
+        newAccount: newAccount.publicKey,
+        signer: anchor.getProvider().wallet.publicKey,
+      })
+      .signers([newAccount])
+      .rpc();
     console.log("Your transaction signature", tx);
+  });
+
+  it("Is double!", async () => {
+    const tx = await program.methods
+      .double()
+      .accounts({
+        account: newAccount.publicKey,
+        signer: anchor.getProvider().wallet.publicKey,
+      })
+      .rpc();
+    console.log("Your transaction signature", tx);
+    const account = await program.account.newAccount.fetch(
+      newAccount.publicKey
+    );
+    assert.equal(account.data, 2);
+  });
+
+  it("Is halve!", async () => {
+    const tx = await program.methods
+      .halve()
+      .accounts({
+        account: newAccount.publicKey,
+      })
+      .rpc();
+    console.log("Your transaction signature", tx);
+    const account = await program.account.newAccount.fetch(
+      newAccount.publicKey
+    );
+    assert.equal(account.data, 1);
+  });
+
+  it("Is add 2!", async () => {
+    const tx = await program.methods
+      .add(2)
+      .accounts({
+        account: newAccount.publicKey,
+      })
+      .rpc();
+    console.log("Your transaction signature", tx);
+    const account = await program.account.newAccount.fetch(
+      newAccount.publicKey
+    );
+    assert.equal(account.data, 3);
+  });
+
+  it("Is subtract 2!", async () => {
+    const tx = await program.methods
+      .sub(2)
+      .accounts({
+        account: newAccount.publicKey,
+      })
+      .rpc();
+    console.log("Your transaction signature", tx);
+    const account = await program.account.newAccount.fetch(
+      newAccount.publicKey
+    );
+    assert.equal(account.data, 1);
   });
 });
