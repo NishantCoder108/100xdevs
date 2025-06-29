@@ -1,0 +1,2 @@
+[workspace] #this is similar to monorepo
+resolver = "3" # this is latest resolver and 2 is the default
