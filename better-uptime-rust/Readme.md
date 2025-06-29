@@ -42,3 +42,17 @@ cargo install better-uptime
    - We can use `poem` framework for end point expose like express in nodejs
    - `cargo add poem tokio`
    - `poem` is for http server and `tokio` is for async and await
+   - ```bash
+     members = [
+     "api",
+     ]
+     ```
+     - After adding above code inside `Cargo.toml` file in root directory and then we can run 
+     - `cargo add poem tokio -p api`
+     - It will install dependencies for api package
+     - `tokio = { version = "1.45.1", features = ["full"] }`
+     - Add above code inside `api/Cargo.toml` file for full tokio feature
+
+5. For serialization and deserialization we can use `serde` and `serde_json` for json serialization and deserialization (https://github.com/serde-rs/json)
+    - For serialization and deserialization `serde = { version = "1.0.219", features = ["derive"] }
+`
