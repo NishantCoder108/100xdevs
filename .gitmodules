@@ -1,3 +1,6 @@
 [submodule "fellowship-test"]
 	path = fellowship-test
 	url = https://github.com/NishantCoder108/fellowship-test
+[submodule "solana-data-reader-rs"]
+	path = solana-data-reader-rs
+	url = https://github.com/NishantCoder108/solana-data-reader-rs
