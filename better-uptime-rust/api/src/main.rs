@@ -5,7 +5,7 @@ use poem::{
     EndpointExt, Route, Server, get, handler, listener::TcpListener, middleware::Tracing, web::Path,
 };
 use routes::{
-    blockchain::balance,
+    blockchain::{balance, tx_history},
     hello::hello,
     internal::{health, home},
     yourname::your_name,
@@ -19,7 +19,8 @@ async fn main() -> Result<(), std::io::Error> {
         .at("/health", get(health))
         .at("/", get(home))
         // Adding a route for blockchain balance
-        .at("/balance/:addr", get(balance));
+        .at("/balance/:addr", get(balance))
+        .at("/tx_history/:addr", get(tx_history));
 
     println!("Starting server on http://localhost:3000");
     Server::new(TcpListener::bind("0.0.0.0:3000"))

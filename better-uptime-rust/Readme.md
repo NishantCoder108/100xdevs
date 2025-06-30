@@ -56,3 +56,7 @@ cargo install better-uptime
 5. For serialization and deserialization we can use `serde` and `serde_json` for json serialization and deserialization (https://github.com/serde-rs/json)
     - For serialization and deserialization `serde = { version = "1.0.219", features = ["derive"] }
 `
+
+6. Add important dependencies for api package
+    - For `solana-client` and `solana-sdk` we can use `cargo add solana-client solana-sdk`
+7. Write code for fetch balance from solana blockchain
