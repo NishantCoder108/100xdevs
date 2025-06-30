@@ -9,5 +9,5 @@ pub struct CreateUserInput {
 #[derive(Serialize, Deserialize)]
 pub struct BalanceResponse {
     pub address: String,
-    pub balance: String,
+    pub balance: f64,
 }
